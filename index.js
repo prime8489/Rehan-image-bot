@@ -1,6 +1,6 @@
 // index.js const express = require("express"); const fetch = require("node-fetch"); const TelegramBot = require("node-telegram-bot-api");
 
-const token = "7529372450:AAEvmJlfsbSaS0jA767za_Z4oGSty-cDxkE"; // Replace with your bot token const admin = "5708790879";   // Replace with your admin user ID const DATABASE_URL = "https://rehan-image-bot-default-rtdb.firebaseio.com"; // Replace with your Firebase URL const WEBHOOK_URL = "https://rehan-image-bot.vercel.app/"; // Replace with your Vercel deploy URL
+const token = "8155132969:AAHLBJs-5J0giI8icdDXTc8Xg1jGgjsF8q8"; // Replace with your bot token const admin = "5708790879";   // Replace with your admin user ID const DATABASE_URL = "https://rehan-image-bot-default-rtdb.firebaseio.com"; // Replace with your Firebase URL const WEBHOOK_URL = "https://rehan-image-bot.vercel.app/"; // Replace with your Vercel deploy URL
 
 const bot = new TelegramBot(token, { webHook: { port: false } }); const app = express(); app.use(express.json()); bot.setWebHook(WEBHOOK_URL);
 

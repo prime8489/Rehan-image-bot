@@ -12,7 +12,7 @@ const app = express();
 app.use(express.json());
 bot.setWebHook(WEBHOOK_URL);
 
-// Save user to Firebase with default balance
+// Save user to Firebase
 async function saveUserToFirebase(user) {
   const url = `${DATABASE_URL}/users/${user.id}.json`;
   const payload = {
@@ -44,7 +44,7 @@ async function getUserData(userId) {
   return await res.json();
 }
 
-// Main webhook endpoint
+// Webhook
 app.post("/", async (req, res) => {
   const update = req.body;
   bot.processUpdate(update);
@@ -55,7 +55,7 @@ app.post("/", async (req, res) => {
   const chatId = msg.chat.id;
   const user = msg.from;
 
-  // /start command
+  // Start command
   if (msg.text === "/start") {
     const userUrl = `${DATABASE_URL}/users/${user.id}.json`;
     const response = await fetch(userUrl);
@@ -69,7 +69,6 @@ app.post("/", async (req, res) => {
       }
     });
 
-    // New user logic
     if (!exists) {
       await saveUserToFirebase(user);
       const totalUsers = await getTotalUsers();
@@ -82,7 +81,7 @@ app.post("/", async (req, res) => {
     }
   }
 
-  // 💰 Balance button
+  // Show balance
   else if (msg.text === "💰 Balance") {
     const userData = await getUserData(user.id);
     const balanceText =
@@ -91,6 +90,49 @@ app.post("/", async (req, res) => {
       `💰 Balance: ${userData.balance} coins\n\n` +
       `🤖 Bot by Rehan Ahmad`;
     await bot.sendMessage(chatId, balanceText);
+  }
+
+  // Admin Panel
+  else if (msg.text === "/admin" && user.id == admin) {
+    await bot.sendMessage(chatId, "Choose an option:", {
+      reply_markup: {
+        keyboard: [["➕ Add Balance", "➖ Remove Balance"], ["⬅ Back"]],
+        resize_keyboard: true
+      }
+    });
+  }
+
+  // Add Balance Flow
+  else if (msg.text === "➕ Add Balance" && user.id == admin) {
+    bot.sendMessage(chatId, "Send User ID to add balance:");
+    bot.once("message", async (msg2) => {
+      const targetId = msg2.text;
+      bot.sendMessage(chatId, "Enter amount to add:");
+      bot.once("message", async (msg3) => {
+        const amount = parseFloat(msg3.text);
+        const userUrl = `${DATABASE_URL}/users/${targetId}.json`;
+        const res = await fetch(userUrl);
+        const data = await res.json();
+
+        if (!data) {
+          await bot.sendMessage(chatId, "❌ User not found.");
+          return;
+        }
+
+        const newBalance = (parseFloat(data.balance) || 0) + amount;
+        await fetch(userUrl, {
+          method: "PATCH",
+          body: JSON.stringify({ balance: newBalance }),
+          headers: { "Content-Type": "application/json" }
+        });
+
+        // Notify Admin
+        await bot.sendMessage(chatId, `✅ Added ₹${amount} to User ID: ${targetId}`);
+
+        // Notify User
+        await bot.sendMessage(targetId, `🎉 Admin increased your balance by ₹${amount}`);
+      });
+    });
   }
 
   res.end("OK");
